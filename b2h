@@ -227,7 +227,8 @@ sub entry_add_extra_info($$) {
                 $entry->{'raw'} = $link;
             } elsif ($link ne '') {
                 $desc =~ s/\\(.)/$1/g;
-                $entry->{'href'} = uri_escape(trim(tex_to_html($link)));
+                #$entry->{'href'} = uri_escape(trim(tex_to_html($link)));
+                $entry->{'href'} = trim(tex_to_html($link));
                 $entry->{'label'} = trim(tex_to_html($desc));
             } else {
                 warn("Undefined link for $desc in $bibtexkey.\n");
