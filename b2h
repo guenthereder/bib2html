@@ -92,11 +92,11 @@ sub print_s {
     $clone->set_metatype(&Text::BibTeX::BTE_REGULAR);
     $clone->set_type($be->type);
     $clone->set_key($be->key);
-    for my $k (@{$be->fieldlist}) {
+    for my $k ($be->fieldlist) {
         $clone->set($k, $be->get($k));
     }
 
-    $clone->delete(qw{owner timestamp www_links www_selected file abstract});
+    $clone->delete(qw{owner timestamp www_links www_selected www_note www_year file abstract});
     my $s = $clone->print_s;
     $s =~ s/\n*$//;
     return $s;
@@ -237,10 +237,23 @@ sub entry_add_extra_info($$) {
         }
     };
 
+    my $www_note;
+    if ($entry->exists('www_note')) {
+        my ($type, $content) = ($entry->get_plain('www_note') =~ /^([^\\:]*):\s*(.*)\s*$/);
+        if ($type eq "raw") {
+            $www_note = $content;
+        } elsif ($type eq 'tex') {
+            $www_note = trim(tex_to_html($content));
+        } else {
+            warn("www_note is note of type tex or raw in $bibtexkey.\n");
+        }
+    }
+
     $target->{'abstract'} = $entry->get('abstract') if ($entry->exists('abstract'));
     $target->{'doi'} = $entry->get_plain('doi') if ($entry->exists('doi'));
     $target->{'misc'} = \@misc if (scalar @misc);
     $target->{'bibtex'} = htmlize($entry->print_s());
+    $target->{'www_note'} = $www_note if (defined $www_note);
 };
 
 sub setup_bib {
@@ -298,7 +311,9 @@ sub prepare_entries {
         my $i = $bibitems{$bibkey};
 
 
-        my $year = $i->exists('year') ? $i->get_plain('year') : 0;
+        my $year = $i->exists('www_year') ? $i->get_plain('www_year') :
+                   $i->exists('year') ? $i->get_plain('year') :
+                   0;
         my $month = $i->exists('month') ? $MONTH2NUMBER->{$i->get_plain('month')} : undef;
         $month = 0 unless defined $month;
 
